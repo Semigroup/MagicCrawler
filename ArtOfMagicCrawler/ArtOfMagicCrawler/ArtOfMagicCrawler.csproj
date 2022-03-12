@@ -43,13 +43,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Logger.cs" />
+    <Compile Include="ArtDownloader.cs" />
+    <Compile Include="ArtObject.cs" />
+    <Compile Include="NetHelper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Spider.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\EBookCrawler\EBookCrawler\EBookCrawler\EBookCrawler.csproj">
+      <Project>{83c200f1-28cc-4b31-bc1f-03c2a11df8ba}</Project>
+      <Name>EBookCrawler</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

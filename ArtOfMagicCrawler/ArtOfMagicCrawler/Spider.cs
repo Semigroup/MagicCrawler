@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Text.RegularExpressions;
+using EBookCrawler;
 
 namespace ArtOfMagicCrawler
 {
@@ -27,23 +28,13 @@ namespace ArtOfMagicCrawler
             {
                 var page = toVisit.Dequeue();
 
-                string source;
-                try
-                {
-                    source = client.DownloadString(page);
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError("Couldnt load source of " + page);
-                    Console.WriteLine(e);
+                string source = client.GetSource(page);
+                if (source == null)
                     continue;
-                }
 
-                //Console.WriteLine("START regex: " + page);
                 var matches = regex.Matches(source);
                 foreach (Match match in matches)
                 {
-                    //Console.WriteLine("-------------MATCH: " + match.Value);
                     var newPage = match.Value;
                     newPage = newPage.Substring(1, newPage.Length - 2);
 
@@ -56,29 +47,24 @@ namespace ArtOfMagicCrawler
                         yield return newPage;
                     else
                     {
-                        var lastPart = GetLastPart(newPage);
+                        var lastPart = NetHelper.GetLastPartOfURL(newPage);
                         if (lastPart.Contains('.'))
                         {
                             string[] subparts = lastPart.Split('.');
                             string ending = subparts.Last();
 
                             if (!Endings.Contains(ending))
-                                Logger.LogError(ending);
+                                Logger.LogLine(ending);
                         }
                         else
                             toVisit.Enqueue(newPage);
                     }
                 }
-                //Console.WriteLine("End regex");
             }
 
             yield break;
         }
 
-        public string GetLastPart(string page)
-        {
-            int i = page.LastIndexOf("/");
-            return page.Substring(i + 1);
-        }
+
     }
 }
