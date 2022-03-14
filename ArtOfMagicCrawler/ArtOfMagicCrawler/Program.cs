@@ -13,18 +13,22 @@ namespace ArtOfMagicCrawler
         static void Main(string[] args)
         {
             string root = @"E:\ArtOfMagicLibrary";
-            WriteList(root);
+            //WriteList(root);
+            DownloadArt(root);
         }
 
         static void DownloadArt(string root)
         {
             string listPath = Path.Combine(root, "art-pages.list");
+            ArtDownloader artDownloader = new ArtDownloader();
 
             foreach (var page in File.ReadLines(listPath))
             {
                 if (page.Length == 0)
                     continue;
-
+                var result = artDownloader.Download(page);
+                Console.WriteLine(page);
+                Console.WriteLine(result);
             }
 
         }

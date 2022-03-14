@@ -12,5 +12,10 @@ namespace ArtOfMagicCrawler
         public string Artist { get; set; }
         public string CardName { get; set; }
         public string MagicSet { get; set; }
+
+        public override string ToString()
+        {
+            return CardName + " (" + MagicSet + "), " + Artist;
+        }
     }
 }
