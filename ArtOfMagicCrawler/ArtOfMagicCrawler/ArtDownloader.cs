@@ -22,10 +22,13 @@ namespace ArtOfMagicCrawler
             if (source == null)
                 return null;
             source = HTMLHelper.RemoveHTMLComments(source);
-           source = source.Replace("<!doctype html>", ""); //ToDo
+            source = source.Replace("<!doctype html>", ""); //ToDo
 
             Tokenizer.Tokenize(source);
             var tokens = Tokenizer.Tokens;
+
+            
+
             Repairer.Repair(source, tokens);
             tokens = Repairer.Output;
             Parser.Parse(tokens);
