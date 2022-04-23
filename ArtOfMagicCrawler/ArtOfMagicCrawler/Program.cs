@@ -37,18 +37,28 @@ namespace ArtOfMagicCrawler
         {
             string target = "https://www.artofmtg.com/art/";
 
-
             string filePath = Path.Combine(root, "art-pages.list");
             Spider spider = new Spider();
 
-            int i = 0;
+            if (!Directory.Exists(root))
+                Directory.CreateDirectory(root);
+            if (!File.Exists(filePath))
+            {
+                var fs = File.Create(filePath);
+                fs.Close();
+            }
+
+            var pages = new List<string>();
+            foreach (var page in spider.CollectPages("https://www.artofmtg.com/", page => page.StartsWith(target)))
+                pages.Add(page);
+
+            pages.Sort();
+
             using (var writer = new StreamWriter(filePath, false))
-                foreach (var page in spider.CollectPages("https://www.artofmtg.com/", page => page.StartsWith(target)))
-                {
-                    i++;
+                foreach (var page in pages)
                     writer.WriteLine(page);
-                }
-            Console.WriteLine("found " + i + " art pages");
+
+            Console.WriteLine("found " + pages.Count + " art pages");
         }
     }
 }

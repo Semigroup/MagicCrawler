@@ -24,7 +24,7 @@ namespace ArtOfMagicCrawler
             }
             catch (Exception e)
             {
-                Logger.LogLine("Couldnt load source of " + url);
+                Logger.LogError("Couldnt load source of " + url);
                 Console.WriteLine(e);
                 return null;
             }

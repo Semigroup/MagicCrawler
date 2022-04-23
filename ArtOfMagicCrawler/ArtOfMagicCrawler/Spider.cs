@@ -54,7 +54,7 @@ namespace ArtOfMagicCrawler
                             string ending = subparts.Last();
 
                             if (!Endings.Contains(ending))
-                                Logger.LogLine(ending);
+                                Logger.LogError(ending);
                         }
                         else
                             toVisit.Enqueue(newPage);

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Net;
 using EBookCrawler.Parsing;
 using EBookCrawler;
+using System.IO;
 
 namespace ArtOfMagicCrawler
 {
@@ -21,13 +22,12 @@ namespace ArtOfMagicCrawler
             string source = Client.GetSource(url);
             if (source == null)
                 return null;
+            source = HTMLHelper.RemoveDoctype(source, out string doctype);
             source = HTMLHelper.RemoveHTMLComments(source);
-            source = source.Replace("<!doctype html>", ""); //ToDo
 
+            File.WriteAllText("test.html",source);
             Tokenizer.Tokenize(source);
             var tokens = Tokenizer.Tokens;
-
-            
 
             Repairer.Repair(source, tokens);
             tokens = Repairer.Output;
@@ -36,7 +36,7 @@ namespace ArtOfMagicCrawler
             var divArea = FindPostArea(Parser.Root);
             if (divArea == null)
             {
-                Logger.LogLine("Couldnt find post area in " + url);
+                Logger.LogError("Couldnt find post area in " + url);
                 return null;
             }
             var header1 = FindHeader1(divArea);
