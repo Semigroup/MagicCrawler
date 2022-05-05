@@ -6,34 +6,109 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Drawing.Imaging;
+using EBookCrawler;
 
 namespace ArtOfMagicCrawler
 {
     class Program
     {
+        [DllImport("Shcore.dll")]
+        static extern int SetProcessDpiAwareness(int PROCESS_DPI_AWARENESS);
 
+        // According to https://msdn.microsoft.com/en-us/library/windows/desktop/dn280512(v=vs.85).aspx
+        private enum DpiAwareness
+        {
+            None = 0,
+            SystemAware = 1,
+            PerMonitorAware = 2
+        }
+
+        [STAThread]
         static void Main(string[] args)
         {
             string root = @"E:\ArtOfMagicLibrary";
-            //WriteList(root);
-            //WriteLibrary(root);
-            DownloadLibrary(root);
+
+            //DownloadList(root);
+            //DownloadLibrary(root);
+            //DownloadArt(root, false);
+            //CreateThumbnails(root, false);
+            RunDialog(root);
         }
-        static void DownloadLibrary(string root)
+        static void RunDialog(string root)
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            SetProcessDpiAwareness((int)DpiAwareness.PerMonitorAware);
+            //(int)DpiAwareness.PerMonitorAware makes the line height of fonts higher. Why?
+            //Has been fixed by changes in FontGraphicsMeasurer in Assistment.Texts
+
+            var dialog = new LibraryImageSelectionDialog();
+            var lib = ReadLibrary(root);
+            dialog.SetLibrary(lib);
+
+            Application.Run(dialog);
+        }
+        static void CreateThumbnails(string root, bool forceRecreation)
+        {
+            ArtLibrary lib = ReadLibrary(root);
+            var thumbnailDir = Path.Combine(root, "thumbnails");
+            int i = 0;
+            foreach (var art in lib.ArtObjects)
+            {
+                var path = art.AbsoluteThumbnailPath;
+                var dir = path.Substring(0, path.LastIndexOf("\\"));
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
+                int h = LibraryImageSelectionDialog.ThumbnailHeight;
+                int w = (int)(art.Width * h * 1.0 / art.Height);
+
+                if (!File.Exists(path) || forceRecreation)
+                    using (Image thumbnail = new Bitmap(w, h))
+                    using (Graphics g = Graphics.FromImage(thumbnail))
+                    using (Image original = Image.FromFile(art.AbsoluteImagePath))
+                    {
+                        g.DrawImage(original, 0, 0, w, h);
+                        thumbnail.Save(path, ImageFormat.Jpeg);
+                    }
+                else
+                    Logger.LogWarning("Thumbnail already exists. Not recreated!");
+
+                Console.WriteLine(path);
+                Console.WriteLine("Created thumbnail " + (i++) + " of " + lib.ArtObjects.Length);
+            }
+        }
+        static void DownloadArt(string root, bool forceReload)
+        {
+            ArtLibrary lib = ReadLibrary(root);
+
+            ArtDownloader artDownloader = new ArtDownloader();
+            artDownloader.DownloadArt(root, lib, forceReload);
+
+            WriteLibrary(root, lib);
+        }
+        static ArtLibrary ReadLibrary(string root)
         {
             string libPath = Path.Combine(root, "art.library");
             var serializer = new XmlSerializer(typeof(ArtLibrary));
             ArtLibrary lib;
             using (var sr = new StreamReader(libPath))
                 lib = (ArtLibrary)serializer.Deserialize(sr);
-
-            ArtDownloader artDownloader = new ArtDownloader();
-            artDownloader.DownloadArt(root, lib);
-
-            using (var sw = new StreamWriter(Path.Combine(root, "art.library")))
-                serializer.Serialize(sw, lib);
+            return lib;
         }
-        static void WriteLibrary(string root)
+        static void WriteLibrary(string root, ArtLibrary library)
+        {
+            var serializer = new XmlSerializer(library.GetType());
+            using (var sw = new StreamWriter(Path.Combine(root, "art.library")))
+                serializer.Serialize(sw, library);
+        }
+
+        static void DownloadLibrary(string root)
         {
             string listPath = Path.Combine(root, "art-pages.list");
             ArtDownloader artDownloader = new ArtDownloader();
@@ -52,9 +127,7 @@ namespace ArtOfMagicCrawler
             {
                 ArtObjects = art.ToArray()
             };
-            var serializer = new XmlSerializer(lib.GetType());
-            using (var sw = new StreamWriter(Path.Combine(root, "art.library")))
-                serializer.Serialize(sw, lib);
+            WriteLibrary(root, lib);
 
             void checkString(string text)
             {
@@ -97,7 +170,7 @@ namespace ArtOfMagicCrawler
             }
         }
 
-        static void WriteList(string root)
+        static void DownloadList(string root)
         {
             string target = "https://www.artofmtg.com/art/";
 

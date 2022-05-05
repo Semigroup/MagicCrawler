@@ -8,6 +8,7 @@ using EBookCrawler.Parsing;
 using EBookCrawler;
 using System.IO;
 using System.Web;
+using System.Drawing;
 
 
 namespace ArtOfMagicCrawler
@@ -87,7 +88,7 @@ namespace ArtOfMagicCrawler
             if (result.MagicSet != null)
                 keys = keys.Append(result.MagicSet);
 
-            result.Keys = keys.ToArray();
+            result.Keys = keys.Select(x => x.ToLower()).ToArray();
 
             return result;
         }
@@ -153,13 +154,14 @@ namespace ArtOfMagicCrawler
         private Parser.Node FindImage(Parser.Node node)
              => Find(node, t => t.Tag == "img" && t.GetAttribute("class") == "attachment-full wp-post-image lazy");
 
-        public void DownloadArt(string root, ArtLibrary lib)
+        public void DownloadArt(string root, ArtLibrary lib, bool forceReload)
         {
             string imgDir = Path.Combine(root, @"images\");
             if (!Directory.Exists(imgDir))
                 Directory.CreateDirectory(imgDir);
 
             List<string> imagePaths = new List<string>();
+            List<ArtObject> non_webps = new List<ArtObject>();
 
             int i = 0;
             foreach (var art in lib.ArtObjects)
@@ -189,17 +191,35 @@ namespace ArtOfMagicCrawler
                 imagePaths.Add(path);
 
                 Console.WriteLine();
-                Console.WriteLine(art);
-                Console.WriteLine(art.ImageURL);
                 Console.WriteLine("Downloading to " + path);
                 i++;
                 Console.WriteLine(i + " of " + lib.ArtObjects.Length);
 
+                if (!File.Exists(path) || forceReload)
+                    Client.DownloadFile(art.ImageURL, path);
+                else
+                    Logger.LogWarning("File already exists. Not reloaded!");
 
-                Client.DownloadFile(art.ImageURL, path);
                 art.AbsoluteImagePath = path;
                 art.RelativeImagePath = Path.Combine(@"\images\", folderName, fileName);
+
+                try
+                {
+                    using (Image img = Image.FromFile(path))
+                    {
+                        art.Width = img.Width;
+                        art.Height = img.Height;
+                    }
+                    non_webps.Add(art);
+                }
+                catch (Exception)
+                {
+                    Logger.LogError("[ArtDownloader] WebP cannot be handled: " + path);
+                }
+                Console.WriteLine(art);
+                Console.WriteLine(art.ImageURL);
             }
+            lib.ArtObjects = non_webps.ToArray();
         }
 
         private string ToFolderName(string setname)
