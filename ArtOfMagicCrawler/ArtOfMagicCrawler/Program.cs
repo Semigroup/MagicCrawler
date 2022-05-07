@@ -48,14 +48,14 @@ namespace ArtOfMagicCrawler
             //Has been fixed by changes in FontGraphicsMeasurer in Assistment.Texts
 
             var dialog = new LibraryImageSelectionDialog();
-            var lib = ReadLibrary(root);
+            var lib = ArtLibrary.ReadLibrary(root);
             dialog.SetLibrary(lib);
 
             Application.Run(dialog);
         }
         static void CreateThumbnails(string root, bool forceRecreation)
         {
-            ArtLibrary lib = ReadLibrary(root);
+            ArtLibrary lib = ArtLibrary.ReadLibrary(root);
             var thumbnailDir = Path.Combine(root, "thumbnails");
             int i = 0;
             foreach (var art in lib.ArtObjects)
@@ -85,28 +85,15 @@ namespace ArtOfMagicCrawler
         }
         static void DownloadArt(string root, bool forceReload)
         {
-            ArtLibrary lib = ReadLibrary(root);
+            ArtLibrary lib = ArtLibrary.ReadLibrary(root);
 
             ArtDownloader artDownloader = new ArtDownloader();
             artDownloader.DownloadArt(root, lib, forceReload);
 
-            WriteLibrary(root, lib);
+            ArtLibrary.WriteLibrary(root, lib);
         }
-        static ArtLibrary ReadLibrary(string root)
-        {
-            string libPath = Path.Combine(root, "art.library");
-            var serializer = new XmlSerializer(typeof(ArtLibrary));
-            ArtLibrary lib;
-            using (var sr = new StreamReader(libPath))
-                lib = (ArtLibrary)serializer.Deserialize(sr);
-            return lib;
-        }
-        static void WriteLibrary(string root, ArtLibrary library)
-        {
-            var serializer = new XmlSerializer(library.GetType());
-            using (var sw = new StreamWriter(Path.Combine(root, "art.library")))
-                serializer.Serialize(sw, library);
-        }
+      
+      
 
         static void DownloadLibrary(string root)
         {
@@ -127,7 +114,7 @@ namespace ArtOfMagicCrawler
             {
                 ArtObjects = art.ToArray()
             };
-            WriteLibrary(root, lib);
+            ArtLibrary.WriteLibrary(root, lib);
 
             void checkString(string text)
             {
