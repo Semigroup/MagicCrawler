@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing.Imaging;
 using System.Threading;
+using EBookCrawler;
 
 namespace ArtOfMagicCrawler
 {
@@ -18,15 +19,21 @@ namespace ArtOfMagicCrawler
 
         public class ImageTile : IComparable<ImageTile>
         {
+            public enum SelectionMode
+            {
+                None,
+                Pinned,
+                Selected
+            }
+
             public ArtObject Art;
             public int Width;
             public int Height;
             private Image Thumbnail;
             public int Index;
-            public bool IsPinned;
-            public bool IsSelected;
             public int X;
             public int Y;
+            public SelectionMode Mode;
 
             public void SetSize(int height)
             {
@@ -62,10 +69,17 @@ namespace ArtOfMagicCrawler
                 this.Y = y;
                 var area = GetArea(x, y);
                 graphics.DrawImage(GetThumbnail(), area);
-                if (IsSelected)
-                    graphics.DrawRectangle(selectedPen, area);
-                if (IsPinned)
-                    graphics.DrawRectangle(pinnedPen, area);
+                switch (Mode)
+                {
+                    case SelectionMode.Pinned:
+                        graphics.DrawRectangle(pinnedPen, area);
+                        break;
+                    case SelectionMode.Selected:
+                        graphics.DrawRectangle(selectedPen, area);
+                        break;
+                    default:
+                        break;
+                }
             }
             public bool Contains(int x, int y)
             {
@@ -124,7 +138,6 @@ namespace ArtOfMagicCrawler
                 return true;
             }
         }
-
         private class CheckingThread
         {
             internal int CurrentTile;
@@ -177,8 +190,7 @@ namespace ArtOfMagicCrawler
         public float ImageHeight { get; set; } = 300;
         public List<ImageTile> Tiles { get; set; } = new List<ImageTile>();
         public List<Row> Rows { get; set; } = new List<Row>();
-        //public List<ImageTile> FilteredTiles { get; set; } = new List<ImageTile>();
-        public List<ImageTile> SelectedTiles { get; set; } = new List<ImageTile>();
+        public ImageTile SelectedTile { get; set; } = null;
         public List<ImageTile> PinnedTiles { get; set; } = new List<ImageTile>();
         public List<Row> ShownRows { get; set; } = new List<Row>();
         public int CurrentRow { get; set; } = 0;
@@ -248,8 +260,8 @@ namespace ArtOfMagicCrawler
             this.CurrentRow = 0;
             this.CurrentTile = 0;
 
-            foreach (var tile in SelectedTiles)
-                AddTile(tile);
+            if (SelectedTile != null)
+                AddTile(SelectedTile);
             foreach (var tile in PinnedTiles)
                 AddTile(tile);
             this.TimeStamp = Thread2.TimeStamp;
@@ -261,11 +273,8 @@ namespace ArtOfMagicCrawler
                 if (Thread2.ShowTile[i])
                 {
                     var tile = Tiles[i];
-                    //this.FilteredTiles.Add(tile);
-
-                    if (tile.IsPinned || tile.IsSelected)
-                        continue;
-                    this.AddTile(tile);
+                    if (tile.Mode == ImageTile.SelectionMode.None)
+                        this.AddTile(tile);
                 }
             this.CurrentTile = Thread2.CurrentTile;
 
@@ -284,59 +293,75 @@ namespace ArtOfMagicCrawler
         }
         private void TogglePinned(ImageTile tile)
         {
-            if (tile.IsSelected)
+            switch (tile.Mode)
             {
-                if (tile.IsPinned)
-                    PinnedTiles.Remove(tile);
-                else
-                {
-                    tile.IsSelected = false;
-                    SelectedTiles.Remove(tile);
-                    PinnedTiles.Add(tile);
-                    PinnedTiles.Sort();
-                }
+                case ImageTile.SelectionMode.None:
+                    Pin(tile);
+                    break;
+                case ImageTile.SelectionMode.Pinned:
+                    DePin(tile);
+                    break;
+                case ImageTile.SelectionMode.Selected:
+                    DeSelect(tile);
+                    Pin(tile);
+                    break;
+                default:
+                    throw new NotImplementedException();
             }
-            else
-            {
-                if (tile.IsPinned)
-                    PinnedTiles.Remove(tile);
-                else
-                {
-                    PinnedTiles.Add(tile);
-                    PinnedTiles.Sort();
-                }
-            }
-            tile.IsPinned = !tile.IsPinned;
             ClearRows();
         }
         private void ToggleSelected(ImageTile tile)
         {
-            if (tile.IsPinned)
-            {
-                tile.IsPinned = false;
-                PinnedTiles.Remove(tile);
-            }
+            var oldTile = SelectedTile;
+            if (oldTile != null)
+                DeSelect(SelectedTile);
 
-            if (tile.IsSelected)
-                SelectedTiles.Remove(tile);
-            else
+            switch (tile.Mode)
             {
-                foreach (var item in SelectedTiles)
-                {
-                    item.IsSelected = false;
-                    if (!item.IsPinned)
-                    {
-                        item.IsPinned = true;
-                        PinnedTiles.Add(item);
-                    }
-                }
-                PinnedTiles.Sort();
-                SelectedTiles.Clear();
-                SelectedTiles.Add(tile);
+                case ImageTile.SelectionMode.None:
+                    if (oldTile != null)
+                    Pin(oldTile);
+                    Select(tile);
+                    break;
+                case ImageTile.SelectionMode.Pinned:
+                    DePin(tile);
+                    if (oldTile != null)
+                    Pin(oldTile);
+                    Select(tile);
+                    break;
+                case ImageTile.SelectionMode.Selected:
+                    break;
+                default:
+                    throw new NotImplementedException();
             }
-            tile.IsSelected = !tile.IsSelected;
-
             ClearRows();
+        }
+        private void Select(ImageTile tile)
+        {
+            this.SelectedTile = tile;
+            tile.Mode = ImageTile.SelectionMode.Selected;
+
+            this.Text = tile.Art.CardName + " ist ausgewählt";
+        }
+        private void DeSelect(ImageTile tile)
+        {
+            if (SelectedTile != tile)
+                Logger.LogWarning("DeSelect(" + tile.Art.CardName + ")" +
+                    " called whil SelectedTile = " + SelectedTile.Art.CardName);
+            SelectedTile.Mode = ImageTile.SelectionMode.None;
+            SelectedTile = null;
+            this.Text = "Kein Bild ausgewählt";
+        }
+        private void Pin(ImageTile tile)
+        {
+            tile.Mode = ImageTile.SelectionMode.Pinned;
+            PinnedTiles.Add(tile);
+            PinnedTiles.Sort();
+        }
+        private void DePin(ImageTile tile)
+        {
+            tile.Mode = ImageTile.SelectionMode.None;
+            PinnedTiles.Remove(tile);
         }
 
         private void LibraryImageSelectionDialog_MouseWheel(object sender, MouseEventArgs e)
@@ -377,7 +402,7 @@ namespace ArtOfMagicCrawler
             lowerRight.Offset(ClientSize.Width - lowerRight.Width, ClientSize.Height - lowerRight.Height);
             e.Graphics.FillRectangle(Brushes.White, lowerRight);
             e.Graphics.DrawString(
-               SelectedTiles.Count + " selected, "
+               (SelectedTile == null ? "0" : "1") + " selected, "
                + PinnedTiles.Count + " pinned, "
                + shownTiles + " shown, " +
                "Progress " + CurrentTile + " / " + Tiles.Count,
