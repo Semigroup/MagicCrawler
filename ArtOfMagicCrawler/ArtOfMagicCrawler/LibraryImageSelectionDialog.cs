@@ -98,6 +98,10 @@ namespace ArtOfMagicCrawler
             {
                 return Index - other.Index;
             }
+            public override string ToString()
+            {
+                return Index + ": " + Art.CardName + ", " + Mode;
+            }
         }
         public class Row
         {
@@ -169,11 +173,19 @@ namespace ArtOfMagicCrawler
 
                 while (!MainThread.IsClosed)
                 {
-                    if (searchWord != MainThread.textBox1.Text)
+                    try
                     {
-                        searchWord = MainThread.textBox1.Text.ToLower();
-                        this.Reset();
+                        if (searchWord != MainThread.textBox1.Text)
+                        {
+                            searchWord = MainThread.textBox1.Text.ToLower();
+                            this.Reset();
+                        }
                     }
+                    catch (Exception)
+                    {
+                        break;
+                    }
+                    
                     for (int i = 0; i < 100; i++)
                         if (CurrentTile < ShowTile.Length)
                         {
@@ -194,6 +206,7 @@ namespace ArtOfMagicCrawler
         public List<ImageTile> PinnedTiles { get; set; } = new List<ImageTile>();
         public List<Row> ShownRows { get; set; } = new List<Row>();
         public int CurrentRow { get; set; } = 0;
+        public ImageTile HoveringTile { get; private set; }
 
         public int MaxWidth => this.ClientSize.Width - vScrollBar1.Width;
 
@@ -219,13 +232,17 @@ namespace ArtOfMagicCrawler
 
         private CheckingThread Thread2;
 
+        private Rectangle LowerRightInfoBox = new Rectangle(0, 0, 750, 43);
+
+        private ShowArtSideForm SideForm;
+
         public LibraryImageSelectionDialog()
         {
             InitializeComponent();
+
             this.MouseWheel += LibraryImageSelectionDialog_MouseWheel;
-
             this.DoubleBuffered = true;
-
+            this.SideForm = new ShowArtSideForm(this);
             this.Thread2 = new CheckingThread(this);
         }
 
@@ -313,23 +330,27 @@ namespace ArtOfMagicCrawler
         private void ToggleSelected(ImageTile tile)
         {
             var oldTile = SelectedTile;
-            if (oldTile != null)
-                DeSelect(SelectedTile);
-
             switch (tile.Mode)
             {
                 case ImageTile.SelectionMode.None:
                     if (oldTile != null)
-                    Pin(oldTile);
+                    {
+                        DeSelect(oldTile);
+                        Pin(oldTile);
+                    }
                     Select(tile);
                     break;
                 case ImageTile.SelectionMode.Pinned:
-                    DePin(tile);
                     if (oldTile != null)
-                    Pin(oldTile);
+                    {
+                        DeSelect(oldTile);
+                        Pin(oldTile);
+                    }
+                    DePin(tile);
                     Select(tile);
                     break;
                 case ImageTile.SelectionMode.Selected:
+                    DeSelect(oldTile);
                     break;
                 default:
                     throw new NotImplementedException();
@@ -342,12 +363,15 @@ namespace ArtOfMagicCrawler
             tile.Mode = ImageTile.SelectionMode.Selected;
 
             this.Text = tile.Art.CardName + " ist ausgewählt";
+            this.button_confirm.Enabled = true;
         }
         private void DeSelect(ImageTile tile)
         {
             if (SelectedTile != tile)
                 Logger.LogWarning("DeSelect(" + tile.Art.CardName + ")" +
-                    " called whil SelectedTile = " + SelectedTile.Art.CardName);
+                    " called while SelectedTile = " + SelectedTile.Art.CardName);
+
+            this.button_confirm.Enabled = false;
             SelectedTile.Mode = ImageTile.SelectionMode.None;
             SelectedTile = null;
             this.Text = "Kein Bild ausgewählt";
@@ -398,15 +422,15 @@ namespace ArtOfMagicCrawler
                 }
             }
 
-            Rectangle lowerRight = new Rectangle(0, 0, 750, 80);
-            lowerRight.Offset(ClientSize.Width - lowerRight.Width, ClientSize.Height - lowerRight.Height);
-            e.Graphics.FillRectangle(Brushes.White, lowerRight);
+            LowerRightInfoBox.Location = new Point(ClientSize.Width - LowerRightInfoBox.Width,
+                ClientSize.Height - LowerRightInfoBox.Height);
+            e.Graphics.FillRectangle(Brushes.White, LowerRightInfoBox);
             e.Graphics.DrawString(
                (SelectedTile == null ? "0" : "1") + " selected, "
                + PinnedTiles.Count + " pinned, "
                + shownTiles + " shown, " +
                "Progress " + CurrentTile + " / " + Tiles.Count,
-                Calibri, Brushes.Black, lowerRight.Location);
+                Calibri, Brushes.Black, LowerRightInfoBox.Location);
         }
         private void LibraryImageSelectionDialog_ClientSizeChanged(object sender, EventArgs e)
         {
@@ -418,12 +442,40 @@ namespace ArtOfMagicCrawler
         }
         private void LibraryImageSelectionDialog_Load(object sender, EventArgs e)
         {
+            this.OnResize(e);
             this.IsClosed = false;
+            this.SideForm.Show();
             this.Thread2.StartThread();
         }
         private void LibraryImageSelectionDialog_FormClosed(object sender, FormClosedEventArgs e)
         {
+            this.SideForm.Close();
             this.IsClosed = true;
+        }
+        private void LibraryImageSelectionDialog_MouseMove(object sender, MouseEventArgs e)
+        {
+            this.HoveringTile = GetTile(e.X, e.Y);
+        }
+        private void LibraryImageSelectionDialog_MouseDown(object sender, MouseEventArgs e)
+        {
+            var tile = GetTile(e.X, e.Y);
+            if (tile == null)
+                return;
+            if (e.Button == MouseButtons.Right)
+                TogglePinned(tile);
+            else if (e.Button == MouseButtons.Left)
+                ToggleSelected(tile);
+        }
+        private void LibraryImageSelectionDialog_Resize(object sender, EventArgs e)
+        {
+            this.button_confirm.Location =
+                new Point(0, ClientSize.Height - button_confirm.Height);
+            this.button_cancel.Location =
+                new Point(button_confirm.Width, ClientSize.Height - button_confirm.Height);
+            this.textBox1.Location =
+                new Point(button_cancel.Right, ClientSize.Height - button_confirm.Height);
+            this.textBox1.Size =
+                new Size(ClientSize.Width - button_cancel.Right - LowerRightInfoBox.Width, textBox1.Height);
         }
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -436,20 +488,15 @@ namespace ArtOfMagicCrawler
             else
                 UpdateRows();
         }
-
-        private void LibraryImageSelectionDialog_MouseMove(object sender, MouseEventArgs e)
+        private void button_confirm_Click(object sender, EventArgs e)
         {
-
+            this.DialogResult = DialogResult.OK;
+            this.Close();
         }
-        private void LibraryImageSelectionDialog_MouseDown(object sender, MouseEventArgs e)
+        private void button_cancel_Click(object sender, EventArgs e)
         {
-            var tile = GetTile(e.X, e.Y);
-            if (tile == null)
-                return;
-            if (e.Button == MouseButtons.Right)
-                TogglePinned(tile);
-            else if (e.Button == MouseButtons.Left)
-                ToggleSelected(tile);
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
         }
     }
 }
