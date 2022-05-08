@@ -154,7 +154,7 @@ namespace ArtOfMagicCrawler
                 this.MainThread = MainThread;
             }
 
-            private void Reset()
+            internal void Reset()
             {
                 this.CurrentTile = 0;
                 this.TimeStamp++;
@@ -445,11 +445,13 @@ namespace ArtOfMagicCrawler
             this.OnResize(e);
             this.IsClosed = false;
             this.SideForm.Show();
+
+            this.Thread2.Reset();
             this.Thread2.StartThread();
         }
         private void LibraryImageSelectionDialog_FormClosed(object sender, FormClosedEventArgs e)
         {
-            this.SideForm.Close();
+            this.SideForm.Hide();
             this.IsClosed = true;
         }
         private void LibraryImageSelectionDialog_MouseMove(object sender, MouseEventArgs e)
