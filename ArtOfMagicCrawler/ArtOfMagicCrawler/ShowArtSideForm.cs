@@ -13,6 +13,7 @@ namespace ArtOfMagicCrawler
     public partial class ShowArtSideForm : Form
     {
         private LibraryImageSelectionDialog MainForm;
+        private ArtObject CurrentArt;
 
         public ShowArtSideForm(LibraryImageSelectionDialog MainForm )
         {
@@ -35,21 +36,24 @@ namespace ArtOfMagicCrawler
         {
             if (MainForm.HoveringTile != null)
             {
-                var art = MainForm.HoveringTile.Art;
-                this.pictureBox1.Image = Image.FromFile(art.AbsoluteImagePath);
-                StringBuilder sb = new StringBuilder();
-                sb.AppendLine(art.CardName);
-                sb.AppendLine(art.MagicSet);
-                sb.AppendLine(art.Artist);
-                sb.AppendLine(art.Width + "x" + art.Height);
-                sb.AppendLine(art.Note);
-                foreach (var item in art.Keys)
+                if (CurrentArt != MainForm.HoveringTile.Art)
                 {
-                    sb.Append(item);
-                    sb.Append(", ");
-                }
+                    CurrentArt = MainForm.HoveringTile.Art;
+                    this.pictureBox1.Image = Image.FromFile(CurrentArt.AbsoluteImagePath);
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine(CurrentArt.CardName);
+                    sb.AppendLine(CurrentArt.MagicSet);
+                    sb.AppendLine(CurrentArt.Artist);
+                    sb.AppendLine(CurrentArt.Width + "x" + CurrentArt.Height);
+                    sb.AppendLine(CurrentArt.Note);
+                    foreach (var item in CurrentArt.Keys)
+                    {
+                        sb.Append(item);
+                        sb.Append(", ");
+                    }
 
-                this.label1.Text = sb.ToString();
+                    this.label1.Text = sb.ToString();
+                }
             }
         }
     }
