@@ -238,12 +238,13 @@ namespace ArtOfMagicCrawler
 
         public LibraryImageSelectionDialog()
         {
-            InitializeComponent();
-
-            this.MouseWheel += LibraryImageSelectionDialog_MouseWheel;
-            this.DoubleBuffered = true;
             this.SideForm = new ShowArtSideForm(this);
             this.Thread2 = new CheckingThread(this);
+
+            InitializeComponent();
+
+            this.DoubleBuffered = true;
+            this.MouseWheel += LibraryImageSelectionDialog_MouseWheel;
         }
 
         public void SetLibrary(ArtLibrary library)
