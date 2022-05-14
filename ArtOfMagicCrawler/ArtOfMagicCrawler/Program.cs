@@ -32,10 +32,13 @@ namespace ArtOfMagicCrawler
         {
             string root = @"E:\ArtOfMagicLibrary";
 
+            Logger.ShowWarnings = false;
+            Logger.ShowErrors = true;
+
             //DownloadList(root);
             //DownloadLibrary(root);
-            //DownloadArt(root, false);
-            //CreateThumbnails(root, false);
+            DownloadArt(root, false);
+            CreateThumbnails(root, false);
             RunDialog(root);
         }
         static void RunDialog(string root)
