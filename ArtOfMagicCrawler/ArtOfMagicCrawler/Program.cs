@@ -27,15 +27,22 @@ namespace ArtOfMagicCrawler
             PerMonitorAware = 2
         }
 
-        [STAThread]
+        //[STAThread]
         static void Main(string[] args)
         {
-            string root = @"E:\ArtOfMagicLibrary";
+            string root = args.Length > 0 ? args[0] : @"E:\ArtOfMagicLibrary";
+
+            if (!Directory.Exists(root))
+            {
+                Logger.LogError("Cannot find directory " + root + "!");
+                Console.ReadKey();
+                return;
+            }
 
             Logger.ShowWarnings = false;
             Logger.ShowErrors = true;
             Logger.ShowInfo = true;
-           
+
 
             Creator.UpdateMtgLibrary(root);
             RunDialog(root);
