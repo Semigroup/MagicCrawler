@@ -75,6 +75,7 @@
     <Compile Include="ArtDownloader.cs" />
     <Compile Include="ArtLibrary.cs" />
     <Compile Include="ArtObject.cs" />
+    <Compile Include="Creator.cs" />
     <Compile Include="LibraryImageSelectionDialog.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -35,25 +35,10 @@ namespace ArtOfMagicCrawler
             Logger.ShowWarnings = false;
             Logger.ShowErrors = true;
             Logger.ShowInfo = true;
+           
 
-            UpdateMtgLibrary(root);
-        }
-
-        static void UpdateMtgLibrary(string root)
-        {
-            DownloadList(root);
-            string pathCardDatabase = DownloadCardDatabase(root);
-            DraftLibrary(root, pathCardDatabase);
-            DownloadArt(root, false, pathCardDatabase);
-            CreateThumbnails(root, false);
+            Creator.UpdateMtgLibrary(root);
             RunDialog(root);
-        }
-
-        static string DownloadCardDatabase(string root)
-        {
-            var dest = Path.Combine(root, "AtomicCards.json");
-            NetHelper.DownloadFile("https://mtgjson.com/api/v5/AtomicCards.json", dest);
-            return dest;
         }
 
         static void RunDialog(string root)
@@ -71,151 +56,6 @@ namespace ArtOfMagicCrawler
 
             Application.Run(dialog);
         }
-        static void CreateThumbnails(string root, bool forceRecreation)
-        {
-            ArtLibrary lib = ArtLibrary.ReadLibrary(root);
-            var thumbnailDir = Path.Combine(root, "thumbnails");
-            int i = 0;
-            foreach (var art in lib.ArtObjects)
-            {
-                var path = art.AbsoluteThumbnailPath;
-                var dir = path.Substring(0, path.LastIndexOf("\\"));
-                if (!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
 
-                int h = LibraryImageSelectionDialog.ThumbnailHeight;
-                int w = (int)(art.Width * h * 1.0 / art.Height);
-
-                if (!File.Exists(path) || forceRecreation)
-                    using (Image thumbnail = new Bitmap(w, h))
-                    using (Graphics g = Graphics.FromImage(thumbnail))
-                    using (Image original = Image.FromFile(art.AbsoluteImagePath))
-                    {
-                        g.DrawImage(original, 0, 0, w, h);
-                        thumbnail.Save(path, ImageFormat.Jpeg);
-                    }
-                else
-                    Logger.LogWarning("Thumbnail already exists. Not recreated!");
-
-                Logger.LogInfo("CreateThumbnails", path);
-                Logger.LogInfo("CreateThumbnails", "Created thumbnail " + (i++) + " of " + lib.ArtObjects.Length);
-            }
-        }
-        static void DownloadArt(string root, bool forceReload, string pathCardDatabase)
-        {
-            ArtLibrary lib = ArtLibrary.ReadLibrary(root);
-
-            ArtDownloader artDownloader = new ArtDownloader(pathCardDatabase);
-            artDownloader.DownloadArt(root, lib, forceReload);
-
-            ArtLibrary.WriteLibrary(root, lib);
-        }
-
-        static void DraftLibrary(string root, string pathCardDatabas)
-        {
-            string listPath = Path.Combine(root, "art-pages.list");
-            ArtDownloader artDownloader = new ArtDownloader(pathCardDatabas);
-            List<ArtObject> art = new List<ArtObject>();
-
-            int inspectedPages = 0;
-            string[] lines = File.ReadAllLines(listPath);
-            foreach (var page in lines)
-            {
-                if (page.Length == 0)
-                    continue;
-                var result = artDownloader.GetArtObject(page);
-
-                if (result != null)
-                    art.Add(result);
-                inspectedPages++;   
-                if(inspectedPages % 100 == 0)
-                    Logger.LogInfo("DraftLibrary", "Inspected " + inspectedPages + " pages of " + lines.Length);
-            }
-            ArtLibrary lib = new ArtLibrary()
-            {
-                ArtObjects = art.ToArray()
-            };
-            ArtLibrary.WriteLibrary(root, lib);
-
-            //void checkString(string text)
-            //{
-            //    if (text == null)
-            //        return;
-            //    for (int i = 0; i < text.Length; i++)
-            //    {
-            //        if ('a' <= text[i] && text[i] <= 'z')
-            //            continue;
-            //        if ('A' <= text[i] && text[i] <= 'Z')
-            //            continue;
-            //        if ('0' <= text[i] && text[i] <= '9')
-            //            continue;
-            //        if (text[i] == ' ')
-            //            continue;
-            //        if (text[i] == ',')
-            //            continue;
-            //        if (text[i] == '.')
-            //            continue;
-            //        if (text[i] == '!')
-            //            continue;
-            //        if (text[i] == ':')
-            //            continue;
-            //        if (text[i] == '-')
-            //            continue;
-            //        if (text[i] == '&')
-            //            continue;
-            //        if (text[i] == '|')
-            //            continue;
-            //        if (text[i] == '/')
-            //            continue;
-            //        if (text[i] == '\'')
-            //            continue;
-            //        if (text[i] == '(')
-            //            continue;
-            //        if (text[i] == ')')
-            //            continue;
-            //        Console.WriteLine(text);
-            //    }
-            //}
-        }
-
-        static void DownloadList(string root)
-        {
-            string target = "https://www.artofmtg.com/art/";
-
-            string filePath = Path.Combine(root, "art-pages.list");
-            Spider spider = new Spider();
-
-            if (!Directory.Exists(root))
-                Directory.CreateDirectory(root);
-            if (!File.Exists(filePath))
-            {
-                var fs = File.Create(filePath);
-                fs.Close();
-            }
-
-            var pages = new List<string>();
-            int printUpdateCounter = 0;
-            foreach (var page in spider.CollectPages("https://www.artofmtg.com/", page => page.StartsWith(target)))
-            {
-                if(page != null)
-                    pages.Add(page);
-                printUpdateCounter++;
-                if(printUpdateCounter >= 100)
-                {
-                    Console.WriteLine("Visited " + spider.HandledPages.Count + " pages");
-                    Console.WriteLine("ToDo: Visit " + spider.PagesToVisit.Count + " pages");
-                    Console.WriteLine("Collected " + pages.Count + " pages");
-                    printUpdateCounter = 0;
-                }
-            }
-
-            pages.Sort();
-
-            using (var writer = new StreamWriter(filePath, false))
-                foreach (var page in pages)
-                    writer.WriteLine(page);
-
-            Console.WriteLine("found " + pages.Count + " art pages");
-        }
     }
 }
