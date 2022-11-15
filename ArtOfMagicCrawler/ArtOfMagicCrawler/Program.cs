@@ -34,13 +34,28 @@ namespace ArtOfMagicCrawler
 
             Logger.ShowWarnings = false;
             Logger.ShowErrors = true;
+            Logger.ShowInfo = true;
 
-            //DownloadList(root);
-            //DownloadLibrary(root);
-            DownloadArt(root, false);
+            UpdateMtgLibrary(root);
+        }
+
+        static void UpdateMtgLibrary(string root)
+        {
+            DownloadList(root);
+            string pathCardDatabase = DownloadCardDatabase(root);
+            DraftLibrary(root, pathCardDatabase);
+            DownloadArt(root, false, pathCardDatabase);
             CreateThumbnails(root, false);
             RunDialog(root);
         }
+
+        static string DownloadCardDatabase(string root)
+        {
+            var dest = Path.Combine(root, "AtomicCards.json");
+            NetHelper.DownloadFile("https://mtgjson.com/api/v5/AtomicCards.json", dest);
+            return dest;
+        }
+
         static void RunDialog(string root)
         {
             Application.EnableVisualStyles();
@@ -82,29 +97,29 @@ namespace ArtOfMagicCrawler
                 else
                     Logger.LogWarning("Thumbnail already exists. Not recreated!");
 
-                Console.WriteLine(path);
-                Console.WriteLine("Created thumbnail " + (i++) + " of " + lib.ArtObjects.Length);
+                Logger.LogInfo("CreateThumbnails", path);
+                Logger.LogInfo("CreateThumbnails", "Created thumbnail " + (i++) + " of " + lib.ArtObjects.Length);
             }
         }
-        static void DownloadArt(string root, bool forceReload)
+        static void DownloadArt(string root, bool forceReload, string pathCardDatabase)
         {
             ArtLibrary lib = ArtLibrary.ReadLibrary(root);
 
-            ArtDownloader artDownloader = new ArtDownloader();
+            ArtDownloader artDownloader = new ArtDownloader(pathCardDatabase);
             artDownloader.DownloadArt(root, lib, forceReload);
 
             ArtLibrary.WriteLibrary(root, lib);
         }
-      
-      
 
-        static void DownloadLibrary(string root)
+        static void DraftLibrary(string root, string pathCardDatabas)
         {
             string listPath = Path.Combine(root, "art-pages.list");
-            ArtDownloader artDownloader = new ArtDownloader();
+            ArtDownloader artDownloader = new ArtDownloader(pathCardDatabas);
             List<ArtObject> art = new List<ArtObject>();
 
-            foreach (var page in File.ReadLines(listPath))
+            int inspectedPages = 0;
+            string[] lines = File.ReadAllLines(listPath);
+            foreach (var page in lines)
             {
                 if (page.Length == 0)
                     continue;
@@ -112,6 +127,9 @@ namespace ArtOfMagicCrawler
 
                 if (result != null)
                     art.Add(result);
+                inspectedPages++;   
+                if(inspectedPages % 100 == 0)
+                    Logger.LogInfo("DraftLibrary", "Inspected " + inspectedPages + " pages of " + lines.Length);
             }
             ArtLibrary lib = new ArtLibrary()
             {
@@ -119,45 +137,45 @@ namespace ArtOfMagicCrawler
             };
             ArtLibrary.WriteLibrary(root, lib);
 
-            void checkString(string text)
-            {
-                if (text == null)
-                    return;
-                for (int i = 0; i < text.Length; i++)
-                {
-                    if ('a' <= text[i] && text[i] <= 'z')
-                        continue;
-                    if ('A' <= text[i] && text[i] <= 'Z')
-                        continue;
-                    if ('0' <= text[i] && text[i] <= '9')
-                        continue;
-                    if (text[i] == ' ')
-                        continue;
-                    if (text[i] == ',')
-                        continue;
-                    if (text[i] == '.')
-                        continue;
-                    if (text[i] == '!')
-                        continue;
-                    if (text[i] == ':')
-                        continue;
-                    if (text[i] == '-')
-                        continue;
-                    if (text[i] == '&')
-                        continue;
-                    if (text[i] == '|')
-                        continue;
-                    if (text[i] == '/')
-                        continue;
-                    if (text[i] == '\'')
-                        continue;
-                    if (text[i] == '(')
-                        continue;
-                    if (text[i] == ')')
-                        continue;
-                    Console.WriteLine(text);
-                }
-            }
+            //void checkString(string text)
+            //{
+            //    if (text == null)
+            //        return;
+            //    for (int i = 0; i < text.Length; i++)
+            //    {
+            //        if ('a' <= text[i] && text[i] <= 'z')
+            //            continue;
+            //        if ('A' <= text[i] && text[i] <= 'Z')
+            //            continue;
+            //        if ('0' <= text[i] && text[i] <= '9')
+            //            continue;
+            //        if (text[i] == ' ')
+            //            continue;
+            //        if (text[i] == ',')
+            //            continue;
+            //        if (text[i] == '.')
+            //            continue;
+            //        if (text[i] == '!')
+            //            continue;
+            //        if (text[i] == ':')
+            //            continue;
+            //        if (text[i] == '-')
+            //            continue;
+            //        if (text[i] == '&')
+            //            continue;
+            //        if (text[i] == '|')
+            //            continue;
+            //        if (text[i] == '/')
+            //            continue;
+            //        if (text[i] == '\'')
+            //            continue;
+            //        if (text[i] == '(')
+            //            continue;
+            //        if (text[i] == ')')
+            //            continue;
+            //        Console.WriteLine(text);
+            //    }
+            //}
         }
 
         static void DownloadList(string root)
@@ -176,8 +194,20 @@ namespace ArtOfMagicCrawler
             }
 
             var pages = new List<string>();
+            int printUpdateCounter = 0;
             foreach (var page in spider.CollectPages("https://www.artofmtg.com/", page => page.StartsWith(target)))
-                pages.Add(page);
+            {
+                if(page != null)
+                    pages.Add(page);
+                printUpdateCounter++;
+                if(printUpdateCounter >= 100)
+                {
+                    Console.WriteLine("Visited " + spider.HandledPages.Count + " pages");
+                    Console.WriteLine("ToDo: Visit " + spider.PagesToVisit.Count + " pages");
+                    Console.WriteLine("Collected " + pages.Count + " pages");
+                    printUpdateCounter = 0;
+                }
+            }
 
             pages.Sort();
 

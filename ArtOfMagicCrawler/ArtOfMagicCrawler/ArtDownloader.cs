@@ -22,9 +22,13 @@ namespace ArtOfMagicCrawler
         public Tokenizer Tokenizer { get; set; } = new Tokenizer();
         public Repairer Repairer { get; set; } = new Repairer();
         public Parser Parser { get; set; } = new Parser();
-        public MagicInfoProvider InfoProvider { get; set; } = new MagicInfoProvider();
+        public MagicInfoProvider InfoProvider { get; set; }
 
-        //public Generator gen { get; set; } = new Generator();
+        public ArtDownloader(string pathCardDatabase)
+        {
+            this.InfoProvider = new MagicInfoProvider(pathCardDatabase);
+        }
+
 
         public ArtObject GetArtObject(string url)
         {
@@ -71,7 +75,7 @@ namespace ArtOfMagicCrawler
 
             var imgNode = FindImage(divArea);
             if (imgNode == null)
-                Logger.LogError("Couldnt find Image");
+                Logger.LogError("[ArtDownloader] Couldnt find Image on " + url);
             else
                 result.ImageURL = imgNode.Token.GetAttribute("data-src");
 
@@ -152,7 +156,11 @@ namespace ArtOfMagicCrawler
         private Parser.Node FindHeader1(Parser.Node node)
             => Find(node, t => t.Tag == "h1");
         private Parser.Node FindImage(Parser.Node node)
-             => Find(node, t => t.Tag == "img" && t.GetAttribute("class") == "attachment-full wp-post-image lazy");
+             => Find(node, 
+                 t => t.Tag == "img" 
+                 && t.GetAttribute("class").Contains("attachment-full")
+                 && t.GetAttribute("class").Contains("wp-post-image")
+                 );
 
         public void DownloadArt(string root, ArtLibrary lib, bool forceReload)
         {
@@ -190,10 +198,9 @@ namespace ArtOfMagicCrawler
                 }
                 imagePaths.Add(path);
 
-                Console.WriteLine();
-                Console.WriteLine("Downloading to " + path);
                 i++;
-                Console.WriteLine(i + " of " + lib.ArtObjects.Length);
+                Logger.LogInfo("ArtDownloader", "Downloading to " + path);
+                Logger.LogInfo("ArtDownloader", i + " of " + lib.ArtObjects.Length);
 
                 if (!File.Exists(path) || forceReload)
                     Client.DownloadFile(art.ImageURL, path);
@@ -216,8 +223,8 @@ namespace ArtOfMagicCrawler
                 {
                     Logger.LogError("[ArtDownloader] WebP cannot be handled: " + path);
                 }
-                Console.WriteLine(art);
-                Console.WriteLine(art.ImageURL);
+                Logger.LogInfo("ArtDownloader", art);
+                Logger.LogInfo("ArtDownloader", art.ImageURL);
             }
             lib.ArtObjects = non_webps.ToArray();
         }

@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
 using System.IO;
 using EBookCrawler;
@@ -21,8 +18,12 @@ namespace ArtOfMagicCrawler
 
         private SortedDictionary<string, Card> Cards = new SortedDictionary<string, Card>();
 
-        public MagicInfoProvider()
+        public string PathCardDatabase { get; private set; }
+
+        public MagicInfoProvider(string PathCardDatabase)
         {
+                this.PathCardDatabase = PathCardDatabase;
+
             IEnumerable<string> getKeys(JToken arr)
             {
                 yield return (string)arr["name"];
@@ -61,7 +62,7 @@ namespace ArtOfMagicCrawler
                     yield return (string)text;
             }
 
-            using (StreamReader file = File.OpenText(@"AtomicCards.json"))
+            using (StreamReader file = File.OpenText(PathCardDatabase))
             using (JsonTextReader reader = new JsonTextReader(file))
             {
                 JsonSerializer serializer = JsonSerializer.Create();
@@ -72,7 +73,7 @@ namespace ArtOfMagicCrawler
                     int subCards = item.First.Children().Count();
                     if (subCards > 2)
                     {
-                        Logger.LogError(item.Name + " has " + subCards + " subcards!");
+                        Logger.LogError("MagicInfoProvider", item.Name + " has " + subCards + " subcards!");
                         continue;
                     }
                     foreach (JObject cardInfo in item.First)
@@ -86,7 +87,7 @@ namespace ArtOfMagicCrawler
 
                         if (name == null)
                         {
-                            Logger.LogError(item.Name + " has subcards without name");
+                            Logger.LogError("MagicInfoProvider", item.Name + " has subcards without name");
                             continue;
                         }
 
@@ -96,7 +97,7 @@ namespace ArtOfMagicCrawler
                             Keys = getKeys(cardInfo)
                         };
                         if (Cards.ContainsKey(card.Name))
-                            Logger.LogError(card.Name + " (" + item.Name + ")" +
+                            Logger.LogError("MagicInfoProvider", card.Name + " (" + item.Name + ")" +
                                 " already contained in database");
                         else
                             Cards.Add(card.Name, card);
@@ -139,7 +140,7 @@ namespace ArtOfMagicCrawler
                 return card.Keys;
             else
             {
-                Logger.LogError("MagicInfoProvider: Couldnt find DataBase Entry for " + cardName);
+                Logger.LogError("MagicInfoProvider", "Couldnt find DataBase Entry for " + cardName);
                 return null;
             }
         }

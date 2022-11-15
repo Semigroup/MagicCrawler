@@ -15,18 +15,21 @@ namespace ArtOfMagicCrawler
         "js", "jpg", "ico", "css"
         };
 
+        public Queue<string> PagesToVisit { get; private set; }
+        public HashSet<string> HandledPages { get; private set; }
+
         public IEnumerable<string> CollectPages(string root, Predicate<string> target)
         {
             var regex = new Regex("\"" + root.Replace(".", "\\.") + "[^\"]*\"");
             var client = new WebClient();
 
-            var handled = new HashSet<string>();
-            var toVisit = new Queue<string>();
-            toVisit.Enqueue(root);
+            this.HandledPages = new HashSet<string>();
+            this.PagesToVisit = new Queue<string>();
+            PagesToVisit.Enqueue(root);
 
-            while (toVisit.Count > 0)
+            while (PagesToVisit.Count > 0)
             {
-                var page = toVisit.Dequeue();
+                var page = PagesToVisit.Dequeue();
 
                 string source = client.GetSource(page);
                 if (source == null)
@@ -38,10 +41,10 @@ namespace ArtOfMagicCrawler
                     var newPage = match.Value;
                     newPage = newPage.Substring(1, newPage.Length - 2);
 
-                    if (handled.Contains(newPage))
+                    if (HandledPages.Contains(newPage))
                         continue;
 
-                    handled.Add(newPage);
+                    HandledPages.Add(newPage);
 
                     if (target(newPage))
                         yield return newPage;
@@ -54,10 +57,16 @@ namespace ArtOfMagicCrawler
                             string ending = subparts.Last();
 
                             if (!Endings.Contains(ending))
-                                Logger.LogError(ending);
+                            {
+                                Logger.LogWarning("[Spider] page refers to unknown file endings:");
+                                Logger.LogWarning("[Spider] page:" + page);
+                                Logger.LogWarning("[Spider] link:" + newPage);
+                                Logger.LogWarning("[Spider] ending:" + ending);
+                            }
                         }
                         else
-                            toVisit.Enqueue(newPage);
+                            PagesToVisit.Enqueue(newPage);
+                        yield return null;
                     }
                 }
             }
