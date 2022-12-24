@@ -11,6 +11,8 @@ namespace ArtOfMagicCrawler
 {
     public class Spider
     {
+        public int CapacityHashSet { get; set; } = 40_000;
+
         public string[] Endings = {
         "js", "jpg", "ico", "css"
         };
@@ -23,7 +25,7 @@ namespace ArtOfMagicCrawler
             var regex = new Regex("\"" + root.Replace(".", "\\.") + "[^\"]*\"");
             var client = new WebClient();
 
-            this.HandledPages = new HashSet<string>();
+            this.HandledPages = new HashSet<string>(CapacityHashSet);
             this.PagesToVisit = new Queue<string>();
             PagesToVisit.Enqueue(root);
 

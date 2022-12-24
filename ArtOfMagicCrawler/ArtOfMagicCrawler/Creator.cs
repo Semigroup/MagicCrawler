@@ -18,11 +18,20 @@ namespace ArtOfMagicCrawler
     {
         public static void UpdateMtgLibrary(string root)
         {
+            Logger.LogInfo("Updating Mtg Library");
+            Logger.LogInfo("Downloading List (1/5)");
             DownloadList(root);
+            Logger.LogInfo("Downloading Card Database (2/5)");
             string pathCardDatabase = DownloadCardDatabase(root);
+            //string pathCardDatabase = Path.Combine(root, "AtomicCards.json");
+            Logger.LogInfo("Downloading Library Structure (3/5)");
             DraftLibrary(root, pathCardDatabase);
+            Logger.LogInfo("Downloading Art (4/5)");
             DownloadArt(root, false, pathCardDatabase);
+            Logger.LogInfo("Creating Thumbnails (5/5)");
             CreateThumbnails(root, false);
+            Logger.LogInfo("Finished Updating Mtg Library");
+
         }
 
         public static string DownloadCardDatabase(string root)
@@ -164,9 +173,9 @@ namespace ArtOfMagicCrawler
                 printUpdateCounter++;
                 if (printUpdateCounter >= 100)
                 {
-                    Console.WriteLine("Visited " + spider.HandledPages.Count + " pages");
-                    Console.WriteLine("ToDo: Visit " + spider.PagesToVisit.Count + " pages");
-                    Console.WriteLine("Collected " + pages.Count + " pages");
+                    Logger.LogInfo("Visited " + spider.HandledPages.Count + " pages");
+                    Logger.LogInfo("ToDo: Visit " + spider.PagesToVisit.Count + " pages");
+                    Logger.LogInfo("Collected " + pages.Count + " pages");
                     printUpdateCounter = 0;
                 }
             }
@@ -177,7 +186,7 @@ namespace ArtOfMagicCrawler
                 foreach (var page in pages)
                     writer.WriteLine(page);
 
-            Console.WriteLine("found " + pages.Count + " art pages");
+            Logger.LogInfo("found " + pages.Count + " art pages");
         }
     }
 }

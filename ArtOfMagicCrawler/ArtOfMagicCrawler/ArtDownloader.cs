@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Net;
 using EBookCrawler.Parsing;
 using EBookCrawler;
 using System.IO;
 using System.Web;
 using System.Drawing;
+using static System.Net.WebRequestMethods;
 
 
 namespace ArtOfMagicCrawler
@@ -40,7 +40,7 @@ namespace ArtOfMagicCrawler
             source = HTMLHelper.RemoveHTMLComments(source);
             source = HttpUtility.HtmlDecode(source);
 
-            File.WriteAllText("test.html", source);
+            System.IO.File.WriteAllText("test.html", source);
             Tokenizer.Tokenize(source);
             IEnumerable<Token> tokens = Tokenizer.Tokens;
 
@@ -77,7 +77,16 @@ namespace ArtOfMagicCrawler
             if (imgNode == null)
                 Logger.LogError("[ArtDownloader] Couldnt find Image on " + url);
             else
+            {
                 result.ImageURL = imgNode.Token.GetAttribute("data-src");
+                //sometimes result.ImageURL is /cdn-cgi/mirage/3197c01eb48ccb5cd20121f2837c38f111c2b014c64370f762b356a65dd36ebb/1440/https://www.artofmtg.com/wp-content/uploads/2022/12/Rocketship-Unfinity-MtG-Art.jpg
+                //I have no idea why (this is not the case in the original source code accessed by browser)
+                int index = result.ImageURL.IndexOf("https://");
+                result.ImageURL = result.ImageURL.Substring(index);
+            }
+
+
+
 
             IEnumerable<string> keys = null;
             if (!result.CardName.ToLower().EndsWith(" token"))
@@ -156,8 +165,8 @@ namespace ArtOfMagicCrawler
         private Parser.Node FindHeader1(Parser.Node node)
             => Find(node, t => t.Tag == "h1");
         private Parser.Node FindImage(Parser.Node node)
-             => Find(node, 
-                 t => t.Tag == "img" 
+             => Find(node,
+                 t => t.Tag == "img"
                  && t.GetAttribute("class").Contains("attachment-full")
                  && t.GetAttribute("class").Contains("wp-post-image")
                  );
@@ -202,10 +211,10 @@ namespace ArtOfMagicCrawler
                 Logger.LogInfo("ArtDownloader", "Downloading to " + path);
                 Logger.LogInfo("ArtDownloader", i + " of " + lib.ArtObjects.Length);
 
-                if (!File.Exists(path) || forceReload)
+                if (!System.IO.File.Exists(path) || forceReload)
                     Client.DownloadFile(art.ImageURL, path);
                 else
-                    Logger.LogWarning("File already exists. Not reloaded!");
+                    Logger.LogWarning("ArtDownloader", "File already exists. Not reloaded!");
 
                 art.AbsoluteImagePath = path;
                 art.RelativeImagePath = Path.Combine(@"\images\", folderName, fileName);
@@ -253,6 +262,8 @@ namespace ArtOfMagicCrawler
             cardname = cardname.Replace(")", "");
             cardname = cardname.Replace("/", "");
             cardname = cardname.Replace(" ", "");
+            cardname = cardname.Replace("?", "");
+            cardname = cardname.Replace("!", "");
             return cardname;
         }
     }

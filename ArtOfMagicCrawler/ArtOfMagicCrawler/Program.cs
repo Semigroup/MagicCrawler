@@ -39,7 +39,7 @@ namespace ArtOfMagicCrawler
                 return;
             }
 
-            Logger.ShowWarnings = false;
+            Logger.ShowWarnings = true;
             Logger.ShowErrors = true;
             Logger.ShowInfo = true;
 
