@@ -85,9 +85,6 @@ namespace ArtOfMagicCrawler
                 result.ImageURL = result.ImageURL.Substring(index);
             }
 
-
-
-
             IEnumerable<string> keys = null;
             if (!result.CardName.ToLower().EndsWith(" token"))
                 keys = InfoProvider.GetKeys(result.CardName);

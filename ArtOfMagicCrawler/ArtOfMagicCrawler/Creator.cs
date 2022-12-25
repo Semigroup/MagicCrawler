@@ -24,14 +24,15 @@ namespace ArtOfMagicCrawler
             Logger.LogInfo("Downloading Card Database (2/5)");
             string pathCardDatabase = DownloadCardDatabase(root);
             //string pathCardDatabase = Path.Combine(root, "AtomicCards.json");
+            Logger.ShowWarnings = false;
             Logger.LogInfo("Downloading Library Structure (3/5)");
             DraftLibrary(root, pathCardDatabase);
+            Logger.ShowWarnings = true;
             Logger.LogInfo("Downloading Art (4/5)");
             DownloadArt(root, false, pathCardDatabase);
             Logger.LogInfo("Creating Thumbnails (5/5)");
             CreateThumbnails(root, false);
             Logger.LogInfo("Finished Updating Mtg Library");
-
         }
 
         public static string DownloadCardDatabase(string root)

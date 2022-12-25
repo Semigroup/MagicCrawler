@@ -22,7 +22,7 @@ namespace ArtOfMagicCrawler
 
         public MagicInfoProvider(string PathCardDatabase)
         {
-                this.PathCardDatabase = PathCardDatabase;
+            this.PathCardDatabase = PathCardDatabase;
 
             IEnumerable<string> getKeys(JToken arr)
             {
@@ -53,9 +53,15 @@ namespace ArtOfMagicCrawler
                     }
                 }
 
-                JArray types = arr["types"] as JArray;
-                foreach (string item in types)
-                    yield return item;
+                string[] metaTypes = { "types", "supertypes", "subtypes" };
+                foreach (var meta in metaTypes)
+                {
+                    JArray types = arr[meta] as JArray;
+                    foreach (JToken item in types)
+                        yield return (string)item;
+                }
+
+
 
                 var text = arr["text"];
                 if (text != null)
