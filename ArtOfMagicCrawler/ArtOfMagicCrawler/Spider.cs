@@ -14,7 +14,7 @@ namespace ArtOfMagicCrawler
         public int CapacityHashSet { get; set; } = 40_000;
 
         public string[] Endings = {
-        "js", "jpg", "ico", "css"
+        "js", "jpg", "ico", "css", "png", "jpeg"
         };
 
         public Queue<string> PagesToVisit { get; private set; }
@@ -42,6 +42,16 @@ namespace ArtOfMagicCrawler
                 {
                     var newPage = match.Value;
                     newPage = newPage.Substring(1, newPage.Length - 2);
+
+                    int indexWS = newPage.IndexOf(' ');
+                    if (indexWS > -1)
+                        newPage = newPage.Substring(0, indexWS);
+                    int indexPC = newPage.IndexOf('%');
+                    if (indexPC > -1)
+                        newPage = newPage.Substring(0, indexPC);
+                    int indexHash = newPage.IndexOf('#');
+                    if (indexHash > -1)
+                        newPage = newPage.Substring(0, indexHash);
 
                     if (HandledPages.Contains(newPage))
                         continue;
