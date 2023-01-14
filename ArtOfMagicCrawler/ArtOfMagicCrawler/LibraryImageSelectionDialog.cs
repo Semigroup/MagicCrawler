@@ -38,7 +38,10 @@ namespace ArtOfMagicCrawler
             public void SetSize(int height)
             {
                 this.Height = height;
-                this.Width = (int)(Art.Width * height / Art.Height);
+                if (Art.Height > 0)
+                    this.Width = (int)(Art.Width * height / Art.Height);
+                else
+                    this.Width = 0;
             }
 
             public Rectangle GetArea(int x, int y)
@@ -185,7 +188,7 @@ namespace ArtOfMagicCrawler
                     {
                         break;
                     }
-                    
+
                     for (int i = 0; i < 100; i++)
                         if (CurrentTile < ShowTile.Length)
                         {

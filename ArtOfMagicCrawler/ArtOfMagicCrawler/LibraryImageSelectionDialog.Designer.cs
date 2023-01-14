@@ -39,9 +39,9 @@
             // vScrollBar1
             // 
             this.vScrollBar1.Dock = System.Windows.Forms.DockStyle.Right;
-            this.vScrollBar1.Location = new System.Drawing.Point(2065, 0);
+            this.vScrollBar1.Location = new System.Drawing.Point(1365, 0);
             this.vScrollBar1.Name = "vScrollBar1";
-            this.vScrollBar1.Size = new System.Drawing.Size(34, 1142);
+            this.vScrollBar1.Size = new System.Drawing.Size(34, 731);
             this.vScrollBar1.TabIndex = 1;
             // 
             // timer1
@@ -53,43 +53,47 @@
             // button_confirm
             // 
             this.button_confirm.Enabled = false;
-            this.button_confirm.Location = new System.Drawing.Point(1351, 841);
+            this.button_confirm.Location = new System.Drawing.Point(901, 538);
+            this.button_confirm.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.button_confirm.Name = "button_confirm";
-            this.button_confirm.Size = new System.Drawing.Size(229, 43);
+            this.button_confirm.Size = new System.Drawing.Size(153, 28);
             this.button_confirm.TabIndex = 2;
-            this.button_confirm.Text = "Auswählen";
+            this.button_confirm.Text = "Confirm Choice";
             this.button_confirm.UseVisualStyleBackColor = true;
             this.button_confirm.Click += new System.EventHandler(this.button_confirm_Click);
             // 
             // textBox1
             // 
             this.textBox1.Font = new System.Drawing.Font("Calibri", 10.875F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox1.Location = new System.Drawing.Point(664, 711);
+            this.textBox1.Location = new System.Drawing.Point(443, 455);
+            this.textBox1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(385, 43);
+            this.textBox1.Size = new System.Drawing.Size(258, 30);
             this.textBox1.TabIndex = 3;
             // 
             // button_cancel
             // 
-            this.button_cancel.Location = new System.Drawing.Point(1611, 696);
+            this.button_cancel.Location = new System.Drawing.Point(1074, 445);
+            this.button_cancel.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.button_cancel.Name = "button_cancel";
-            this.button_cancel.Size = new System.Drawing.Size(229, 43);
+            this.button_cancel.Size = new System.Drawing.Size(153, 28);
             this.button_cancel.TabIndex = 4;
-            this.button_cancel.Text = "Abbrechen";
+            this.button_cancel.Text = "Cancel";
             this.button_cancel.UseVisualStyleBackColor = true;
             this.button_cancel.Click += new System.EventHandler(this.button_cancel_Click);
             // 
             // LibraryImageSelectionDialog
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(2099, 1142);
+            this.ClientSize = new System.Drawing.Size(1399, 731);
             this.Controls.Add(this.button_cancel);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.vScrollBar1);
             this.Controls.Add(this.button_confirm);
+            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.Name = "LibraryImageSelectionDialog";
-            this.Text = "LibraryImageSelectionDialog";
+            this.Text = "Library Image Gallery";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.LibraryImageSelectionDialog_FormClosed);
             this.Load += new System.EventHandler(this.LibraryImageSelectionDialog_Load);
             this.ClientSizeChanged += new System.EventHandler(this.LibraryImageSelectionDialog_ClientSizeChanged);

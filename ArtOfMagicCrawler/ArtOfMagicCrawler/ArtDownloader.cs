@@ -40,7 +40,7 @@ namespace ArtOfMagicCrawler
             source = HTMLHelper.RemoveHTMLComments(source);
             source = HttpUtility.HtmlDecode(source);
 
-            System.IO.File.WriteAllText("test.html", source);
+            //File.WriteAllText("last_downloaded_page.html", source);
             Tokenizer.Tokenize(source);
             IEnumerable<Token> tokens = Tokenizer.Tokens;
 
