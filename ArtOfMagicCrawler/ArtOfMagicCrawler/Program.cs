@@ -30,7 +30,19 @@ namespace ArtOfMagicCrawler
         //[STAThread]
         static void Main(string[] args)
         {
-            string root = args.Length > 0 ? args[0] : @"E:\ArtOfMagicLibrary";
+            string root = "";
+            if (args.Length > 0)
+                root = args[0];
+            else
+            {
+                var partitions = new string[]{ "E", "D", "C", "F", "G" };
+                foreach (var p in partitions)
+                {
+                    root = p + @":\ArtOfMagicLibrary";
+                    if (Directory.Exists(root))
+                        break;
+                }
+            }
 
             if (!Directory.Exists(root))
             {
